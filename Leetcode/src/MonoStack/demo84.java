@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+/**
+ * 柱状图中最大的矩阵
+ */
 public class demo84 {
     public int largestRectangleArea(int[] heights) {
         //利用单调栈实现两个要求
