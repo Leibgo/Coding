@@ -29,6 +29,7 @@ public class TCPEchoClient {
         //从服务器端接收到相同的数据
         int totalBytesRcvd = 0;
         int bytesRcvd;
+        //确保数据全部读取完毕
         while (totalBytesRcvd < data.length){
             bytesRcvd = in.read(data, totalBytesRcvd, data.length - totalBytesRcvd);
             if (bytesRcvd == -1){

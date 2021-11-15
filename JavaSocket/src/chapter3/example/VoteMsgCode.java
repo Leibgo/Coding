@@ -3,7 +3,7 @@ package chapter3.example;
 import java.io.IOException;
 
 /**
- * 对投票消息的序列化和反序列化
+ * 对投票消息的序列化和反序列化:将对象->字节数组 || 字节数组->对象
  */
 public interface VoteMsgCode {
     //根据特定的协议,将投票消息序列化成字节序列

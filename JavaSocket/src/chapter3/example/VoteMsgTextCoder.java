@@ -14,7 +14,7 @@ public class VoteMsgTextCoder implements VoteMsgCode{
     public static final String DELIMSTR = " ";
     public static final int MAX_WIRE_LENGTH = 2000;
 
-    //将VoteMsg基于本文的方式转换成字节数组
+    //将VoteMsg基于文本的方式转换成字节数组
     @Override
     public byte[] toWire(VoteMsg msg) throws IOException {
         String msgString = MAGIC + DELIMSTR + (msg.isInquiry() ? INQSTR : VOTESTR)

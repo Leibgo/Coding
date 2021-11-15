@@ -1,10 +1,9 @@
 package chapter3;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Map;
+
+//基于长度的成帧方法
 
 public class LengthFramer implements Framer{
     public static final int MAXMESSAGELENGTH = 65535;
@@ -14,8 +13,8 @@ public class LengthFramer implements Framer{
 
     private DataInputStream in;
 
-    public LengthFramer(DataInputStream in) {
-        this.in = in;
+    public LengthFramer(InputStream in) {
+        this.in = new DataInputStream(in);
     }
 
     @Override

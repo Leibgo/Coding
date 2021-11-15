@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * 基于定界符的成帧方法
+ */
 public class DelimFramer implements Framer{
     private InputStream in;
     //使用'\n'作为消息结束的定界符
@@ -32,6 +35,7 @@ public class DelimFramer implements Framer{
     //从输入流中读取消息
     @Override
     public byte[] nextMsg() throws IOException {
+        //保存读取的数据
         ByteArrayOutputStream messageBuffer = new ByteArrayOutputStream();
         int nextByte;
         //read():返回数据的下一个字节.当数据读取完毕,流要结束时返回-1
