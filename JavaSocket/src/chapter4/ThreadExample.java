@@ -12,7 +12,7 @@ public class ThreadExample implements Runnable{
         while (true){
             System.out.println(Thread.currentThread().getName() + ": " + greeting);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
