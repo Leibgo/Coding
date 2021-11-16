@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 public class EchoProtocol implements Runnable{
     //IO缓存
     private static final int BUFSIZE = 32;
-    private Socket clntSock;
-    private Logger logger;
+    private final Socket clntSock;
+    private final Logger logger;
 
     public EchoProtocol(Socket clntSock, Logger logger) {
         this.clntSock = clntSock;
