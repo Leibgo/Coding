@@ -11,8 +11,13 @@ public class RecovTreeController {
     @Autowired
     RecovTreeService treeService;
 
-    @GetMapping("/tree")
-    public R getTree(){
+    @GetMapping("/list")
+    public R list(){
         return R.success(treeService.list());
+    }
+
+    @GetMapping("/tree")
+    public R tree() {
+        return R.success(treeService.getTree());
     }
 }
