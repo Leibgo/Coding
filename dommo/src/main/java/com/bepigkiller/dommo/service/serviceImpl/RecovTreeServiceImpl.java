@@ -25,14 +25,14 @@ public class RecovTreeServiceImpl extends ServiceImpl<RecovTreeDao, RecovTree> i
 
     private List<RecovTreeVo> entity2Vo(List<RecovTree> rootNodes) {
         if(rootNodes.size() == 0){
-            return new ArrayList<>();
+            return null;
         }
         List<RecovTreeVo> treeVos = new ArrayList<>();
         for (RecovTree rootNode : rootNodes) {
             //属性复制到VO
             RecovTreeVo vo = new RecovTreeVo();
             BeanUtils.copyProperties(rootNode, vo);
-            //给VO注入children
+            //查找相同父类ID的子节点,给VO注入children
             LambdaQueryWrapper<RecovTree> childWrapper = new LambdaQueryWrapper<>();
             childWrapper.eq(RecovTree::getParentId, rootNode.getId());
             List<RecovTree> children = this.list(childWrapper);
