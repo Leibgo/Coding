@@ -29,9 +29,11 @@ public class EchoProtocol implements Runnable{
             //已经接收到的字节
             int totalBytesEchoed = 0;
             byte[] echoBuffer = new byte[BUFSIZE];
-            //接收消息直到关闭连接
+            //接收消息并回显消息,直到关闭连接
+            //in.read(echoBuffer):将输入流的消息读取到echoBuffer中
+            //out.write(echoBuffer, 0 ,recvMsgSize):将缓冲数组中的数据写到输出流中
             while((recvMsgSize = in.read(echoBuffer)) != -1){
-                out.write(echoBuffer, totalBytesEchoed, recvMsgSize);
+                out.write(echoBuffer, 0, recvMsgSize);
                 totalBytesEchoed += recvMsgSize;
             }
             //打印日志

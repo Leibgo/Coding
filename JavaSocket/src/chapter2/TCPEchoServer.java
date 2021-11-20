@@ -33,7 +33,7 @@ public class TCPEchoServer {
             while((recvMsgSize = in.read(receiveBuffer)) != -1){
                 out.write(receiveBuffer, 0, recvMsgSize);
             }
-            //关闭Sokcet
+            //关闭Socket
             clntSocket.close();
         }
     }
