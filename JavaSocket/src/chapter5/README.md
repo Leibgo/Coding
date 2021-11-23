@@ -18,7 +18,7 @@
 
   <font color=yellow>同步和异步关注的是消息通知的机制</font>
 
-  同步：调用者等待被调用者返回消息，才能继续执行
+  同步：调用者等待被调用者完成后返回消息，才能继续执行
 
   异步：被调用者通过状态、通知、回调机制主动通知调用者的运行状态
 
@@ -172,13 +172,70 @@ Buffer类维护了四大核心变量属性来提供关于数组的信息.
 
 在使用缓冲区进行输入输出数据之前，必须确定缓冲区的postion、limit都已经正确设置了。
 
-`flip()`：也称为"切换成读模式"，将limit设置为当前的postion位置，将postion位置设置为0
+<font color=pink>缓存区的写模式：channel.read(buffer) 缓存区从信道读取数据并写入到缓存区</font>
 
-`clear()`：将position设置为0，将limit设置为capacity
+<font color=pink>缓存区的读模式：channel.write(buffer) 信道从缓存区读取数据</font>
 
-`compact()`：可以理解为"切换成写模式"，将当前postion和limit间的数据复制到缓冲区的开始位置，从而为<font color='orange'>写模式腾出空间</font>。position设置为复制数据的长度，limit设置为capacity
+`flip()`：也称为"切换成读模式"，<font color=orange>对缓存区进行读取数据时，即channel要write(buffer)需要读取缓存区的数据前调用此方法</font>，将limit设置为当前的postion位置，将postion位置设置为0.
 
-<img src="https://pic1.zhimg.com/v2-228c5b3548e521e8a45b4fd4ffde9e89_r.jpg?source=1940ef5c" alt="preview" style="float:left" />
+~~~java
+public final Buffer flip() {
+    limit = position;
+    position = 0;
+    mark = -1;
+    return this;
+}
+~~~
+
+`clear()`：将position设置为0，将limit设置为capacity，在channel.read(buffer)前调用此方法
+
+~~~java
+public final Buffer clear() {
+    position = 0;
+    limit = capacity;
+    mark = -1;
+    return this;l
+}
+~~~
+
+`rewind() :` 将postion置为0
+
+~~~java
+public final Buffer rewind() {
+    position = 0;
+    mark = -1;
+    return this;
+}
+~~~
+
+`mark():` 将mark设置为position处
+
+~~~java
+public final Buffer mark() {
+    mark = position;
+    return this;
+}
+~~~
+
+`reset():`将postion充置为上次mark处
+
+~~~java
+public final Buffer reset() {
+    int m = mark;
+    if (m < 0)
+        throw new InvalidMarkException();
+    position = m;
+    return this;
+}
+~~~
+
+`compact()`：可以理解为"切换成写模式"，将当前postion和limit间的数据复制到缓冲区的开始位置，从而为<font color='orange'>缓存区的写模式腾出空间</font>。position设置为复制数据的长度，limit设置为capacity，这样写入的数据就不会覆盖之前未读的数据。
+
+~~~java
+//compact()方法将所有未读的数据拷贝到Buffer起始处。然后将position设到最后一个未读元素正后面
+~~~
+
+<img src="E:\loubei\学习资料\Coding\JavaSocket\src\chapter5\README.assets\1588158646.png" alt="img" style="zoom:50%;float:left" />
 
 ### 3.3 Channel
 
@@ -200,6 +257,10 @@ Selector 建立在非阻塞的基础之上，大家经常听到的 <font color=o
 多路复用的核心在于使用一个 Selector 来管理多个通道，可以是 SocketChannel，也可以是 ServerSocketChannel，将各个通道注册到 Selector 上，指定监听的事件；
 
 之后可以只用一个线程来轮询这个 Selector，看看上面是否有通道是准备好的，当通道准备好可读或可写，然后才去开始真正的读写，这样就避免了给每个通道都开启一个线程。
+
+每一个Selector都有三个键集，<font color=pink>Set<SelectionKey> keys</font>，<font color=pink>Set<SelectionKey> selectedKeys</font>，<font color=pink>Set<SelectionKey> cancelKeys</font>
+
+注册后事件存在于 keys 中,经过 select() 后，系统发现有事件准备好了，该事件的key就会被选择，加入selectedKeys中，select(）返回值为已准备好的key数量，该方法为阻塞方法，只有返回值为大于0才返回（经过很长一段时间后无果也会返回），可以被wakeUp()方法唤醒
 
 <font color=yellow>1.开启Selector</font>
 

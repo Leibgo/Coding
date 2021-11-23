@@ -28,6 +28,7 @@ public class TCPEchoClientNonblocking {
             while(!clntChan.finishConnect()) {
                 System.out.println(".");
             }
+            //注册为可读
         }
         //使用两种方法创建将要读写的ByteBuffer实例
         //1.包含了发送数据的byte[]数组

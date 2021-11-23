@@ -21,7 +21,7 @@ public class UDPEchoServer {
         DatagramPacket packet = new DatagramPacket(new byte[ECHOMAX], ECHOMAX);
         //不断接收数据
         while(true){
-            //接收到数据后，packet会包含客户端的IP和端口
+            //接收到数据后，packet会包含客户端的IP和端口,作为自己的目标地址和端口号用来发送
             socket.receive(packet);
             System.out.println("正在处理客户端IP:" + packet.getAddress().getHostAddress() + " 端口:" + packet.getPort());
             socket.send(packet);
