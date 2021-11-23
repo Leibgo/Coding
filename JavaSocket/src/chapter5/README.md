@@ -235,7 +235,7 @@ public final Buffer reset() {
 //compact()方法将所有未读的数据拷贝到Buffer起始处。然后将position设到最后一个未读元素正后面
 ~~~
 
-<img src="E:\loubei\学习资料\Coding\JavaSocket\src\chapter5\README.assets\1588158646.png" alt="img" style="zoom:50%;float:left" />
+<img src="https://itqiankun.oss-cn-beijing.aliyuncs.com/picture/blogArticles/2020-04-29/1588158646.png" alt="img" style="zoom:55%;float:left" />
 
 ### 3.3 Channel
 
@@ -243,7 +243,7 @@ public final Buffer reset() {
 
 Channel通道<font color=orange>只负责传输数据、不直接操作数据的</font>。操作数据都是通过Buffer缓冲区来进行操作！Channel与前面介绍的 Buffer 打交道，读操作的时候将 Channel 中的数据填充到 Buffer 中，而写操作时将 Buffer 中的数据写入到 Channel 中。
 
-<img src="E:\loubei\学习资料\Coding\JavaSocket\src\chapter5\README.assets\1588158677.png" alt="img" style="zoom:67%;float:left" />
+<img src="https://itqiankun.oss-cn-beijing.aliyuncs.com/picture/blogArticles/2020-04-29/1588158677.png" alt="img" style="zoom:80%;float:left" />
 
 - FileChannel：文件通道，用于文件的读和写
 - DatagramChannel：用于 UDP 连接的接收和发送
