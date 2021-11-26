@@ -4,6 +4,8 @@
 
 <img src="https://pic2.zhimg.com/v2-dc8a8a77294bd584a9e8ec1bd66cfa7e_r.jpg?source=1940ef5c" alt="preview" style="zoom:80%; float:left" />
 
+<font color=orange>对于一个套接字上的输入操作，第一步通常涉及等待数据从网络中到达。当所等待数据到达时，它被复制到内核中的某个缓冲区。第二步就是把数据从内核缓冲区复制到应用进程缓冲区.</font>
+
 - 同步阻塞
 
 - 同步非阻塞
@@ -50,37 +52,44 @@
 
 ### 1.1 同步阻塞型
 
-<img src="https://static001.geekbang.org/infoq/89/8929de5d4f1c7744967d70ab1126b466.png" alt="img" style="zoom:70%;float:left" />
+<img src="https://static001.geekbang.org/infoq/89/8929de5d4f1c7744967d70ab1126b466.png" alt="img" style="zoom: 67%; float: left;" />
 
-用户线程在内核进行I/O操作时被挂起。整个I/O请求中，用户线程是被阻塞的，这导致用户在I/O期间不能做任何事，CPU利用率不高。
+应用进程被阻塞，直到数据从内核缓冲区复制到应用进程缓冲区中才返回。
+
+应该注意到，在阻塞的过程中，其它应用进程还可以执行，因此阻塞不意味着整个操作系统都被阻塞。因为其它应用进程还可以执行，所以不消耗 CPU 时间，这种模型的 CPU 利用率会比较高。
 
 ### 1.2 同步非阻塞型
 
-<img src="https://static001.geekbang.org/infoq/7a/7adcebe3b38cbbf256a77f274769151d.png" alt="img" style="zoom:80%;float:left" />
+<img src="https://static001.geekbang.org/infoq/7a/7adcebe3b38cbbf256a77f274769151d.png" alt="img" style="zoom:85%;float:left" />
 
-- 用户线程发起 IO 请求时立即返回。但并未读取到任何数据，用户线程需要不断地发起 IO 请求，直到数据到达后，才真正读取到数据，继续执行。即“轮询”机制
-- 整个 IO 请求的过程中，虽然用户线程每次发起 IO 请求后可以立即返回，但是为了等到数据，仍需要不断地轮询、重复请求，消耗了大量的 CPU 的资源
+应用进程执行系统调用后，内核立即返回一个错误码。应用进程需要不断的执行系统调用来查看 IO 请求是否已经完成，即“轮询”机制（polling）
+
+整个 IO 请求的过程中，虽然用户线程每次发起 IO 请求后可以立即返回，但是为了等到数据，仍需要不断地轮询、重复请求，消耗了大量的 CPU 的资源
 
 ### 1.3 IO多路复用
 
-<img src="https://static001.geekbang.org/infoq/79/795cb6c7b7f5c3eab054a6857a7182bd.png" alt="img" style="zoom:80%;float:left" />
+<img src="https://static001.geekbang.org/infoq/79/795cb6c7b7f5c3eab054a6857a7182bd.png" alt="img" style="zoom:88%;float:left" />
 
 <font color=orange>多个连接会共用一个等待机制</font>，模型会阻塞在select或者poll两个系统调用上，而不是阻塞在真正的IO操作上。select 可以监控多个 IO 上是否已有 IO 操作准备就绪，即可达到在同一个线程内同时处理多个 IO 请求的目的。一旦内核发现select负责的一个或多个IO条件准备好时，就通知该进程。
 
 用户首先将需要进行 IO 操作添加到 select 中，同时等待 select 系统调用返回。当数据到达时，IO 被激活，select 函数返回。用户线程正式发起 read 请求，读取数据并继续执行。
 
+<font color=orange>如果一个 Web 服务器没有 I/O 复用，那么每一个 Socket 连接都需要创建一个线程去处理。如果同时有几万个连接，那么就需要创建相同数量的线程。相比于多进程和多线程技术，I/O 复用不需要进程线程创建和切换的开销，系统开销更小。</font>
+
 ### 1.4 信号驱动
 
-<img src="https://static001.geekbang.org/infoq/29/294db4d04c82f31388551ab310ea2257.png" alt="img" style="zoom:80%;float:left" />
+<img src="https://static001.geekbang.org/infoq/29/294db4d04c82f31388551ab310ea2257.png" alt="img" style="zoom:88%;float:left" />
 
-用户进程可以通过 sigaction 系统调用注册一个信号处理程序，然后主程序可以继续向下执行，当有 IO 操作准备就绪时，由内核通知触发一个 SIGIO 信号处理程序执行，然后将用户进程所需要的数据从内核空间拷贝到用户空间
-此模型的优势在于等待数据报到达期间进程不被阻塞。用户主程序可以继续执行，只要等待来自信号处理函数的通知
+用户进程使用 `sigaction` 系统调用注册一个信号处理程序，内核立即返回，应用进程可以继续执行。<font color=orange>也就是说等待数据阶段应用进程是非阻塞的。</font>当有 IO 操作准备就绪时，由内核通知触发一个 `SIGIO` 信号处理程序执行，应用进程收到后调用 `recvfrom` 将数据从内核空间拷贝到用户空间。
+此模型的优势在于等待数据报到达期间进程不被阻塞。用户主程序可以继续执行，只要等待来自信号处理函数的通知。相比于非阻塞式 I/O 的轮询方式，信号驱动 I/O 的 CPU 利用率更高。
 
 ### 1.5 异步
 
-<img src="https://static001.geekbang.org/infoq/60/60c3f1b47fd7fb91ff6a829fc54845aa.png" alt="img" style="zoom:80%;float:left" />
+<img src="https://static001.geekbang.org/infoq/60/60c3f1b47fd7fb91ff6a829fc54845aa.png" alt="img" style="zoom:88%;float:left" />
 
-异步 IO 与信号驱动 IO 最主要的区别是信号驱动 IO 是由内核通知何时可以进行 IO 操作，而<font color=orange>异步 IO 则是由内核告诉用户线程 IO 操作何时完成。</font>信号驱动 IO 当内核通知触发信号处理程序时，信号处理程序还需要阻塞在从内核空间缓冲区复制数据到用户空间缓冲区这个阶段，而异步 IO 直接是在第二个阶段完成后，内核直接通知用户线程可以进行后续操作了
+应用进程执行 `aio_read` 系统调用会立即返回，应用进程可以继续执行，不会被阻塞，内核会在所有操作完成之后向应用进程发送信号。
+
+异步 IO 与信号驱动 IO 最主要的区别是<font color=orange>信号驱动 IO 是由内核通知何时可以进行 IO 操作，而异步 IO 则是由内核告诉用户进程 IO 操作何时完成。</font>信号驱动 IO 当内核通知触发信号处理程序时，信号处理程序还需要阻塞在从内核空间缓冲区复制数据到用户空间缓冲区这个阶段，而异步 IO 直接是在第二个阶段完成后，内核直接通知用户进程可以进行后续操作了。
 
 <img src="https://static001.geekbang.org/infoq/52/527999d677b74bb3ec786f569be56e43.png" alt="img" style="zoom:90%;float:left" />
 
@@ -259,6 +268,12 @@ Selector 建立在非阻塞的基础之上，大家经常听到的 <font color=o
 之后可以只用一个线程来轮询这个 Selector，看看上面是否有通道是准备好的，当通道准备好可读或可写，然后才去开始真正的读写，这样就避免了给每个通道都开启一个线程。
 
 每一个Selector都有三个键集，<font color=pink>Set<SelectionKey> keys</font>，<font color=pink>Set<SelectionKey> selectedKeys</font>，<font color=pink>Set<SelectionKey> cancelKeys</font>
+
+<font color=drsfdred>TCP客户端只有一个Socket对应着只有一个SelectionKey</font>
+
+<font color=drsfdred>TCP服务器端有多个客户端连接，对应着多个Socket以及多个SelectionKey</font>
+
+<font color=drsfdred>服务器的Selector与客户端的Selector不是同一个</font>
 
 注册后事件存在于 keys 中,经过 select() 后，系统发现有事件准备好了，该事件的key就会被选择，加入selectedKeys中，select(）返回值为已准备好的key数量，该方法为阻塞方法，只有返回值为大于0才返回（经过很长一段时间后无果也会返回），可以被wakeUp()方法唤醒
 
