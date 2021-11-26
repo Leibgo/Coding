@@ -33,4 +33,24 @@ public class demo92 {
         reverseHead.next = cur;
         return dummy.next;
     }
+    public ListNode reverseBetween2(ListNode head, int left, int right) {
+        ListNode dummy = new ListNode(-1, head);
+        ListNode cur = head;
+        ListNode pre = dummy;
+        for(int i = 1; i < left; i++){
+            pre = pre.next;
+            cur = cur.next;
+        }
+        pre.next = null;
+        //反转链表
+        ListNode reverseHead = cur;
+        for(int i = 1; i <= right - left; i++){
+            ListNode memo = reverseHead.next.next;
+            reverseHead.next.next = cur;
+            cur = reverseHead.next;
+            reverseHead.next = memo;
+        }
+        pre.next = cur;
+        return dummy.next;
+    }
 }
