@@ -38,7 +38,7 @@ Select first_name from actor where user_id = 1
 
 如果在user_id列上建有索引，则MySQL将使用该索引找到user_id为1的行，也就是说，MySQL先在索引上按值进行查找，然后返回所有包含该值的数据行。
 
-![image-20211209200527177](https://s2.loli.net/2021/12/09/TYyRJoWvwrbI2Ne.png)
+![image-20211209203137938](https://s2.loli.net/2021/12/09/yGhjCHBQk6eENrf.png)
 
 索引(在MySQL中也叫作 "键（Key）" )是<font color=orange>存储引擎用于快速找到记录的一种数据结构</font>，这是索引的基本功能。
 
