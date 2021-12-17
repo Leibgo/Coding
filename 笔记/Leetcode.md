@@ -37,57 +37,54 @@
 
 ## 树
 
-|              题目               |                名称                |                          难度                          |                             题型                             |
-| :-----------------------------: | :--------------------------------: | :----------------------------------------------------: | :----------------------------------------------------------: |
-|               94                |          二叉树的中序遍历          | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-| <font color=baby>**95**</font>  |         不同的二叉搜索树II         |             <font color=orange>中等</font>             |            <font color=skyblue>二叉搜索树</font>             |
-|               96                |          不同的二叉搜索树          |             <font color=orange>中等</font>             | <font color=pink><font color=skyblue>二叉搜索树</font></font> |
-| <font color=baby>**98**</font>  |           验证二叉搜索树           |             <font color=orange>中等</font>             |            <font color=skyblue>二叉搜索树</font>             |
-|               100               |              相同的树              | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               101               |             对称二叉树             | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               102               |          二叉树的层序遍历          |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               103               |       二叉树的锯齿形层序遍历       |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               104               |          二叉树的最大深度          | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               105               |   从前序与中序遍历序列构造二叉树   |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               106               |   从中序与后序遍历序列构造二叉树   |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               107               |         二叉树的层序遍历II         |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               108               |   将有序数组数组转换为二叉搜索树   | <font color=green><font color=peach>简单</font></font> |            <font color=skyblue>二叉搜索树</font>             |
-|               109               |       有序链表转换二叉搜索树       |             <font color=orange>中等</font>             |            <font color=skyblue>二叉搜索树</font>             |
-|               110               |             平衡二叉树             | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               111               |          二叉树的最小深度          | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               112               |              路径总和              | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               113               |             路径总和II             |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               114               |          二叉树展开为链表          |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               116               |  填充每个节点的下一个右侧节点指针  |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               117               | 填充每个节点的下一个右侧节点指针II |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               124               |        二叉树中的最大路径和        |              <font color=red>困难</font>               |                <font color=pink>二叉树</font>                |
-|               129               |      求根节点到叶节点数字之和      |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               144               |          二叉树的前序遍历          | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               145               |          二叉树的后续遍历          | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-| <font color=baby>**173**</font> |          二叉搜索树迭代器          |             <font color=orange>中等</font>             |            <font color=skyblue>二叉搜索树</font>             |
-|               199               |           二叉树的右视图           |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               230               |      二叉搜索树中第k小的元素       |             <font color=orange>中等</font>             |            <font color=skyblue>二叉搜索树</font>             |
-|               235               |      二叉搜索树的最近公共祖先      | <font color=green><font color=peach>简单</font></font> |            <font color=skyblue>二叉搜索树</font>             |
-| <font color=baby>**236**</font> |        二叉树的最近公共祖先        |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-| <font color=baby>**257**</font> |          二叉树的所有路径          | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-| <font color=baby>**294**</font> |      二叉树的序列化与反序列化      |              <font color=red>困难</font>               |                <font color=pink>二叉树</font>                |
-|               331               |       验证二叉树的前序序列化       |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-|               404               |             左叶子之和             | <font color=green><font color=peach>简单</font></font> |                <font color=pink>二叉树</font>                |
-|               429               |          N叉树的层序遍历           |             <font color=orange>中等</font>             |                <font color=pink>二叉树</font>                |
-| <font color=baby>**437**</font> |            路径总和III             |             <font color=orange>中等</font>             |                            二叉树                            |
-|               501               |                                    |                                                        |                                                              |
-|               513               |                                    |                                                        |                                                              |
-|               530               |                                    |                                                        |                                                              |
-|               543               |                                    |                                                        |                                                              |
-|               572               |                                    |                                                        |                                                              |
-|               589               |                                    |                                                        |                                                              |
-|               590               |                                    |                                                        |                                                              |
-|               687               |                                    |                                                        |                                                              |
-|               872               |                                    |                                                        |                                                              |
-|              1305               |                                    |                                                        |                                                              |
-|                                 |                                    |                                                        |                                                              |
-|                                 |                                    |                                                        |                                                              |
-|                                 |                                    |                                                        |                                                              |
+|              题目               |                名称                |              难度              |                             题型                             |
+| :-----------------------------: | :--------------------------------: | :----------------------------: | :----------------------------------------------------------: |
+|               94                |          二叉树的中序遍历          | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+| <font color=baby>**95**</font>  |         不同的二叉搜索树II         | <font color=orange>中等</font> |            <font color=skyblue>二叉搜索树</font>             |
+|               96                |          不同的二叉搜索树          | <font color=orange>中等</font> | <font color=pink><font color=skyblue>二叉搜索树</font></font> |
+| <font color=baby>**98**</font>  |           验证二叉搜索树           | <font color=orange>中等</font> |            <font color=skyblue>二叉搜索树</font>             |
+|               100               |              相同的树              | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               101               |             对称二叉树             | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               102               |          二叉树的层序遍历          | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               103               |       二叉树的锯齿形层序遍历       | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               104               |          二叉树的最大深度          | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               105               |   从前序与中序遍历序列构造二叉树   | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               106               |   从中序与后序遍历序列构造二叉树   | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               107               |         二叉树的层序遍历II         | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               108               |   将有序数组数组转换为二叉搜索树   | <font color=peach>简单</font>  |            <font color=skyblue>二叉搜索树</font>             |
+|               109               |       有序链表转换二叉搜索树       | <font color=orange>中等</font> |            <font color=skyblue>二叉搜索树</font>             |
+|               110               |             平衡二叉树             | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               111               |          二叉树的最小深度          | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               112               |              路径总和              | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               113               |             路径总和II             | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               114               |          二叉树展开为链表          | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               116               |  填充每个节点的下一个右侧节点指针  | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               117               | 填充每个节点的下一个右侧节点指针II | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               124               |        二叉树中的最大路径和        |  <font color=red>困难</font>   |                <font color=pink>二叉树</font>                |
+|               129               |      求根节点到叶节点数字之和      | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               144               |          二叉树的前序遍历          | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               145               |          二叉树的后续遍历          | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+| <font color=baby>**173**</font> |          二叉搜索树迭代器          | <font color=orange>中等</font> |            <font color=skyblue>二叉搜索树</font>             |
+|               199               |           二叉树的右视图           | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               230               |      二叉搜索树中第k小的元素       | <font color=orange>中等</font> |            <font color=skyblue>二叉搜索树</font>             |
+|               235               |      二叉搜索树的最近公共祖先      | <font color=peach>简单</font>  |            <font color=skyblue>二叉搜索树</font>             |
+| <font color=baby>**236**</font> |        二叉树的最近公共祖先        | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+| <font color=baby>**257**</font> |          二叉树的所有路径          | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+| <font color=baby>**294**</font> |      二叉树的序列化与反序列化      |  <font color=red>困难</font>   |                <font color=pink>二叉树</font>                |
+|               331               |       验证二叉树的前序序列化       | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               404               |             左叶子之和             | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               429               |          N叉树的层序遍历           | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+| <font color=baby>**437**</font> |            路径总和III             | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+| <font color=baby>**501**</font> |         二叉搜索树中的众数         | <font color=peach>简单</font>  |            <font color=skyblue>二叉搜索树</font>             |
+|               513               |           找树左下角的数           | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               530               |       二叉搜索树的最小绝对差       | <font color=peach>简单</font>  |            <font color=skyblue>二叉搜索树</font>             |
+|               543               |            二叉树的直径            | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               572               |           另一颗树的子树           | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               589               |          N叉树的前序遍历           | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               590               |          N叉树的后序遍历           | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|               687               |            最长同值路径            | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
+|               872               |            叶子相似的树            | <font color=peach>简单</font>  |                <font color=pink>二叉树</font>                |
+|              1305               |      两颗二叉搜索树的所有元素      | <font color=orange>中等</font> |                <font color=pink>二叉树</font>                |
 
 **二叉树前中后序的递归版本属于easy题，而迭代版本通常是medium甚至是hard**
 
@@ -155,4 +152,6 @@ public List<Integer> postorderTraversal(TreeNode root) {
     return list;
 }
 ~~~
+
+<img src="https://s2.loli.net/2021/12/17/VzoDtgWPeHlEC8R.png" alt="image-20211217202851870" style="float:left" />
 
