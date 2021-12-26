@@ -155,3 +155,51 @@ public List<Integer> postorderTraversal(TreeNode root) {
 
 <img src="https://s2.loli.net/2021/12/17/VzoDtgWPeHlEC8R.png" alt="image-20211217202851870" style="float:left" />
 
+## 栈
+
+| 题号 |         名称         |              难度              |              题型               |
+| :--: | :------------------: | :----------------------------: | :-----------------------------: |
+|  20  |      简单的括号      | <font color=peach>简单</font>  |  <font color=skyblue>栈</font>  |
+|  32  |     最长有效括号     |  <font color=red>困难</font>   |  <font color=skyblue>栈</font>  |
+|  42  |                      |                                | <font color=pink>单调栈</font>  |
+|  84  |                      |                                | <font color=pink>单调栈</font>  |
+| 155  |        最小栈        | <font color=peach>简单</font>  |  <font color=skyblue>栈</font>  |
+| 232  |     用栈实现队列     | <font color=peach>简单</font>  |  <font color=skyblue>栈</font>  |
+| 341  | 扁平化嵌套链表迭代器 | <font color=orange>中等</font> | <font color=skyblue>递归</font> |
+| 402  |                      |                                |                                 |
+| 496  |                      |                                | <font color=pink>单调栈</font>  |
+| 503  |                      |                                | <font color=pink>单调栈</font>  |
+| 739  |                      |                                | <font color=pink>单调栈</font>  |
+| 901  |                      |                                | <font color=pink>单调栈</font>  |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+|      |                      |                                |                                 |
+
+## 二分查找
+
+## 动态规划
+
+## 回溯
+
+## 双指针
+
+## 滑动窗口
+
+## 热门题
+
+| 题号 |     名称     |              难度              |      解法       |
+| :--: | :----------: | :----------------------------: | :-------------: |
+| 155  | LRU 缓存机制 | <font color=orange>中等</font> | 哈希表+双向链表 |
+|      |              |                                |                 |
+|      |              |                                |                 |
+
