@@ -289,7 +289,7 @@ MyISAM表的col2列索引的分布
 
 这样的策略减少了当出现行移动或者数据页分裂时二级索引的维护工作，InnoDB在行移动时无需更新二级索引中的这个"指针"。
 
-<img src="C:\Users\PSJ\AppData\Roaming\Typora\typora-user-images\image-20211209190104396.png" alt="image-20211209190104396" style="zoom:80%;float:left" />
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112261949847.png" alt="image-20211209190104396" style="zoom:80%;float:left" />
 
 **在InnoDB表中插入行**
 
