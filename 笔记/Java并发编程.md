@@ -1,4 +1,4 @@
-# Java并发编程实战
+Java并发编程实战
 
 ## 第一章  简介
 
@@ -619,10 +619,9 @@ public final class ThreeStooges {
 在Java内存模型中，final 域还有特殊的语义。final 域能确保初始化过程的安全性，从而可以不受限制地访问不可变对象，并且共享时无需同步。
 
 - 如果某个成员变量用final修饰，<font color=orange>JVM规范做出如下明确的保证：一旦该变量的引用对象对其他线程可见，则其final成员也必须已经完成初始化了，可以被其他线程看到</font>
-
 - final关键字禁止 CPU 指令集重新排序,来保证对象的安全发布，防止对象引用被其他线程在对象被完全构造完成前拿到并使用。
-
 - final修饰的成员变量还有另一个特性，如果是基本类型，则值不能改变。如果是引用类型，则地址不能改变。
+- 对于含有final域的对象，初始化安全性可以防止对对象的初始引用会被重排序到构造过程之前。
 
 final关键字保证了多线程下变量的数据安全性
 
@@ -718,18 +717,7 @@ public class Holder {
 如果Holder对象是不可变的，即将n声明为final类型，那么即使Holder类没有被正确的发布，也可以安全地访问该对象。
 
 ~~~java
-public class Holder {
-    private final int n;
-
-    public Holder(int n) {
-        this.n = n;
-    }
-	
-    public void assertSanity() {
-        if (n != n)
-            throw new AssertionError("This statement is false.");
-    }
-}
+public static Holder holder;
 ~~~
 
 **安全发布的常用模式**
@@ -1369,7 +1357,7 @@ public class HiddenIterator {
 
 将所有对容器状态的访问都串行化，以实现它们的线程安全性。这种方法的代价是严重降低了并发性，当多个线程竞争容器的锁时，吞吐量严重降低。
 
-<font color=orange>并发容器是针对多个线程并发访问设计的。</font>例如：`ConcurrentHashMap`、`CopyOnWriteArrayList`
+<font color=orange>并发容器是针对多个线程并发访问设计的。</font>例如：`ConcurrentHashMap`、`CopyOnWriteArrayList`、`ConcurrentLinkedList`
 
 同时从 `JDK5` 开始，又提供了两种新的容器类型`Queue`、`BlockingQueue`。Queue上的操作不会阻塞，BlockingQueue 增加了可阻塞的插入和获取操作
 
@@ -1542,6 +1530,8 @@ public class ProducerConsumer {
 线程封闭对象只能由单个线程拥有，但可以通过安全发布对象来转移"所有权"，在转移所有权后，只有另一个线程能获得这个对象的访问权限，并且发布对象的线程不会再访问它。
 
 ### 5.4 同步工具类
+
+> 同步工具类基于AQS(Abstract Queued Synchronizer)构建
 
 同步工具类可以是任何一个对象，它根据自身的状态来协调线程的控制流，即<font color=orange>"它们封装了一些状态，这些状态将决定执行同步工具类的线程是继续执行还是等待，此外还提供了一些方法对状态进行操作，以及另一些方法用于高效地等待同步工具类进入到预期状态。"</font>
 
@@ -2064,4 +2054,1750 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
 
 - `Executors`的静态工厂方法
 - 创建`ThreadPoolExecutor`
+
+|           名称           |                             特点                             |
+| :----------------------: | :----------------------------------------------------------: |
+|    newFixedThreadPool    | 创建固定长度的线程池，提交一个任务时创建一个线程，直到达到线程池的最大数量，这时线程池的规模不再变化 |
+|   newCachedThreadPool    | 线程池规模超过处理需求时，会回收空闲的线程。当需求增加时，则可以添加新的线程，规模不存在任何限制 |
+| newSingledThreadExecutor | 创建单个工作线程来执行任务，如果这个线程异常结束，会创建另一个线程代替 |
+|  newScheduledThreadPool  |       创建固定长度的线程池，以延迟和定时的方式执行任务       |
+
+#### 6.3.1 创建线程池
+
+**Executors:**
+
+Executor 和 ExecutorService 的工具类
+
+~~~java
+// 提供静态方法创建新线程
+public static ExecutorService newFixedThreadPool(int nThreads) {
+    return new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+}
+public static ExecutorService newCachedThreadPool() {
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+}
+~~~
+
+**ThreadPoolExecutor:**
+
+也可以通过ThreadPoolExecutor的构造函数来实例化一个线程池，根据需求自己定制。
+
+~~~java
+public ThreadPoolExecutor(int corePoolSize,                               //基本大小
+                          int maximumPoolSize,                            //最大大小
+                          long keepAliveTime,                             //当线程数量大于最大值时，多余线程等待任务的存活时间
+                          TimeUnit unit,								  //存活时间的单位
+                          BlockingQueue<Runnable> workQueue,              //工作队列
+                          ThreadFactory threadFactory,                    //线程池工厂
+                          RejectedExecutionHandler handler)               //饱和策略
+						  {...}                                           
+~~~
+
+**参数介绍：**
+
+BlockingQueue<Runnable> workQueue:
+
+允许提供一个阻塞队列来保存等待执行的任务，排队方法有三种：
+
+|   名称   |                             特点                             |
+| :------: | :----------------------------------------------------------: |
+| 有界队列 |        避免资源耗尽的情况发生，队列满后将触发饱和策略        |
+| 无界队列 | 如果任务快速的到达，并且超过了线程池处理的速度，那么队列将无限增加 |
+| 同步移交 |   直接将任务从生产者线程移交给工作线程，拥有更好的排队性能   |
+
+#### 6.3.2 饱和策略
+
+有界队列被填满后，饱和策略开始发挥作用。可以通过`setRejectionExecutionHandler`处理：
+
+- AbortPolicy：抛出异常，调用者可以自己处理该异常
+- DiscardPolicy：抛弃该任务
+- DiscardOldestPolicy：抛弃下一个将要执行的任务，然后尝试重新提交新的任务
+- CallerRunsPolicy：不会抛出异常，也不会抛弃任务，而是将任务回退到调用者，从而降低新任务的流量。将在调用execute的线程中执行任务
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112271020532.png" alt="image-20211227102033454" style="float:left;zoom:80%;" />
+
+~~~java
+    //ThreadPoolExecutor的静态内部类
+	public static class CallerRunsPolicy implements RejectedExecutionHandler {
+        public CallerRunsPolicy() { }
+        //在调用者线程执行任务
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            if (!e.isShutdown()) {
+                r.run();
+            }
+        }
+	}
+
+	public static class AbortPolicy implements RejectedExecutionHandler {
+        public AbortPolicy() { }
+		//抛出异常
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            throw new RejectedExecutionException("Task " + r.toString() +" rejected from " + e.toString());
+        }
+	}
+
+	public static class DiscardPolicy implements RejectedExecutionHandler {
+        public DiscardPolicy() { }
+		//抛弃任务
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {}
+	}
+
+
+    public static class DiscardOldestPolicy implements RejectedExecutionHandler {
+        public DiscardOldestPolicy() { }
+		//抛弃下一个将要执行的任务，然后重新执行新任务
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            if (!e.isShutdown()) {
+                e.getQueue().poll();
+                e.execute(r);
+            }
+        }
+    }
+~~~
+
+#### 6.3.3 线程工厂
+
+当线程池需要创建一个线程时，通过线程工厂方法创建。
+
+默认的线程工厂方法将创建一个新的、非守护的线程，并且不包含特殊的配置信息
+
+可以自己创建线程工厂自定义创建的新线程
+
+![image-20211227111118572](https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112271111636.png)
+
+~~~java
+public interface ThreadFactory {
+    Thread newThread(Runnable r);
+}
+~~~
+
+~~~java
+//创建自己的线程工厂
+public class MyThreadFactory implements ThreadFactory {
+    private String name;
+
+    public MyThreadFactory(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public Thread newThread(Runnable r) {
+        return new MyThread(r, name);
+    }
+}
+~~~
+
+~~~java
+//线程类
+public class MyThread extends Thread {
+
+    public MyThread(Runnable r, String name) {
+        super(r, name);
+    }
+
+    @Override
+    public void run() {
+        System.out.println(Thread.currentThread().getName());
+        //执行Runnable的run方法
+        super.run();
+    }
+
+    public static void main(String[] args) {
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor
+            (1,1,2000, TimeUnit.MILLISECONDS,new LinkedBlockingDeque<Runnable>(), new MyThreadFactory("loubei's ThreadFactory"));
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    System.out.println("线程开始工作");
+                    long start = System.currentTimeMillis();
+                    Thread.sleep(10000);
+                    long end   = System.currentTimeMillis();
+                    System.out.println("工作了：" + (end - start));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        threadPoolExecutor.execute(r);
+    }
+}
+~~~
+
+**执行结果**
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112271059671.png" alt="image-20211227105903614" style="float:left" />
+
+#### 6.3.4 线程死锁
+
+线程饥饿死锁（Thread Starvation Deadlock）:
+
+线程中的任务需要无限期等待一些必须由池中阻塞队列的其他任务提供的资源或条件才能继续运行。如果线程数量不够的话，可能会发生线程死锁。
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112270927037.png" alt="image-20211227092706888" style="float:left" />
+
+产生死锁的原因:
+
+- Task 0需要等待Task 1和Task 2的结果才能结束对线程的占用
+- Task 1和Task 2需要线程执行完Task 0后才能轮到自己
+
+解决方法：增加线程的数量
+
+## 第七章 活跃性
+
+活跃性危险：
+
+- 死锁
+- 饥饿
+- 活锁
+
+### 7.1 死锁
+
+每个人都拥有其他人需要的资源，同时等待其他人拥有的资源，并且每个人在获得所有需要的资源之前不会放弃自己已经拥有的资源
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112290919082.png" alt="image-20211229091936950" style="float:left" />
+
+数据库服务器检测到死锁时，会选择一个牺牲者并放弃这个事务，作为牺牲者的事务会释放它拥有的资源，从而使其他事务能够继续进行。
+
+Java线程发生死锁时，唯一恢复程序的方式是终止并重启它。
+
+#### 7.1.1 锁顺序死锁
+
+两个线程试图以不同的顺序获得相同的锁。
+
+~~~java
+	private final Object left = new Object();
+    private final Object right = new Object();
+
+    public void leftRight() {
+        //线程A获得left锁后发生线程的切换
+        synchronized (left) {
+            synchronized (right) {
+                doSomething();
+            }
+        }
+    }
+
+    public void rightLeft() {
+        //线程B获得right锁，但无法获得left锁
+        synchronized (right) {
+            synchronized (left) {
+                doSomethingElse();
+            }
+        }
+    }
+~~~
+
+#### 7.1.2 动态的锁顺序死锁
+
+将多个锁作为方法的参数传入，即便所有线程在方法内部都是按照相同的顺序获得锁，但由于参数顺序取决于外部输入，因此锁的顺序仍然可能不同最终导致死锁。
+
+~~~java
+A:transferMoney(myAccount, yourAccount, 10);
+B:transferMoney(yourAccount, myAccount, 20);
+
+public void transferMoney(final Account myAccount, final Account yourAccount, final int money){
+    synchronized(myAccount){
+        synchronized(yourAccount){
+            ...
+        }
+    }
+}
+~~~
+
+<font color=pink>解决这个问题，必须定义锁的顺序，并在整个应用程序中都按照这个顺序来获取锁。</font>
+
+使用`System.identifyHashCode`来定义锁的顺序
+
+~~~java
+	private static final Object tieLock = new Object();
+
+    public void transferMoney(final Account fromAcct,final Account toAcct,final DollarAmount amount)throws InsufficientFundsException {
+        //内部类
+        class Helper {
+            public void transfer() throws InsufficientFundsException {
+                if (fromAcct.getBalance().compareTo(amount) < 0)
+                    throw new InsufficientFundsException();
+                else {
+                    fromAcct.debit(amount);
+                    toAcct.credit(amount);
+                }
+            }
+        }
+        //根据第一个参数计算fromHash
+        int fromHash = System.identityHashCode(fromAcct);
+        //根据第二个参数计算toHash
+        int toHash = System.identityHashCode(toAcct);
+		//根据不同的哈希值大小比较，匹配不同的锁顺序
+        if (fromHash < toHash) {
+            synchronized (fromAcct) {
+                synchronized (toAcct) {
+                    new Helper().transfer();
+                }
+            }
+        } 
+        else if (fromHash > toHash) {
+            synchronized (toAcct) {
+                synchronized (fromAcct) {
+                    new Helper().transfer();
+                }
+            }
+        }
+        //哈希值相同的情况，使用"加时赛锁"，确保只有一个线程可以获得未知顺序的锁
+        else {
+            synchronized (tieLock) {
+                synchronized (fromAcct) {
+                    synchronized (toAcct) {
+                        new Helper().transfer();
+                    }
+                }
+            }
+        }
+    }
+~~~
+
+#### 7.1.3 协作对象之间的死锁
+
+在持有锁时调用某个外部方法，将可能发生活跃性问题。这个外部方法中可能会获取其他锁(这可能会产生死锁)。
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112291054474.png" alt="image-20211229105446406" style="float:left" />
+
+**开放调用**：在调用某个方法时不需要持有锁。
+
+#### 7.1.4 避免死锁
+
+- 开放调用
+- 显式使用Lock类中的定时`tryLock`功能来代替内置锁机制。(书本第十三章)使用内置锁时，只要没有获得锁，就会永远等待下去，而显式锁则可以指定一个超时时限(Timeout)，在等待超过时间后`tryLock`会返回一个错误信息。如果获取锁时超时，那么可以释放这个锁，然后后退并在一段时间后重试，从而消除了死锁发生的条件。
+
+### 7.2 饥饿
+
+- 线程无法访问它所需要的资源，导致一直等待下去。（线程饥饿死锁）
+- 最常见的资源就是**CPU时钟周期**，如果对线程的优先级使用不当，或者在持有锁时执行无法结束的结构，那么可能会导致饥饿
+
+### 7.3 活锁
+
+> 单线程的死循环是活锁的表现形式之一
+
+活锁不会阻塞线程，但也无法继续执行，因为线程将不断重复执行相同的操作。
+
+活锁通常发生在处理事务消息的应用程序中，消息处理器会将无法处理成功的事务回滚到队列的开头，因为事务被放回到队列开头，因此处理器会反复调用。
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202112291102911.png" alt="image-20211229110227846" style="float:left" />
+
+在多个相互协作的线程都对彼此进行响应从而修改彼此的状态，使得任何线程都无法继续执行时，就发生了活锁。
+
+解决活锁问题，需要在重试机制中加入随机性。
+
+## 第八章 性能与可伸缩性
+
+- 吞吐量：一组并发任务中已完成任务所占的比例
+- 响应性：请求从发出到完成的时间
+- 可伸缩性：在增加更多资源的情况下，吞吐量的提升情况
+
+### 8.1 Amdahl定律
+
+> Amdahl定律描述的是：在增加计算资源的情况下，程序在理论上能够实现的最高加速比取决于可并行组件与串行组件的比重
+
+
+$$
+SpeedUp <= \frac{1}{F+\frac{(1-F)}{N}}  (F是必须串行执行的部分,N是处理器个数)
+$$
+当处理器个数N趋近于无穷大时，串行执行比例越少，性能提升的越多，即应用程序伸缩性越好
+
+### 8.2 线程引入的性能开销
+
+|    名称    |                             原因                             |
+| :--------: | :----------------------------------------------------------: |
+| 上下文切换 | 线程阻塞或者发生I/O时，操作系统会将当前线程挂起并将状态保存进TCB，接着再把下一个可执行线程的状态加载进内存 |
+|  内存同步  | 在`synchronized`和`volatile`的可见性保证中，会使用一些特殊的指令，即内存栅栏(Memory Barrier)，直接使用主内存、刷新本地内存,同时会抑制重排序 |
+|    阻塞    | JVM在线程阻塞时通常选择将线程挂起，会产生两次上下文切换(阻塞时将线程切换出去，有资源时将线程切换回来) |
+
+JVM实现的两种阻塞行为：
+
+1. 通过操作系统将阻塞的线程挂起 【适合等待时间长的】
+2. 自旋等待(Spin-Waiting:通过循环不断的等待地尝试获取锁，直到成功) 【适合等待时间短的】
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202201011656184.png" alt="image-20220101165659111" style="zoom:88%;float:left" />
+
+### 8.3 减少锁的竞争
+
+1. 减少锁的持有时间
+2. 减低锁的请求频率
+3. 使用带有协调机制的独占锁，这些机制允许更高的并发性
+
+> 有两种因素影响在锁上发生竞争的可能性：锁的请求频率，锁的持有时间.
+
+#### 8.3.1 缩小锁的范围
+
+将一些与锁无关的代码移除同步代码块，尤其是那些开销比较大的操作，以及可能被阻塞的操作，例如I/O操作。
+
+`这种方式可以尽可能地缩小锁的持有时间`
+
+~~~java
+public class BetterAttributeStore {
+    @GuardedBy("this") 
+    private final Map<String, String> attributes = new HashMap<String, String>();
+    
+    //直接锁住整个方法
+    public synchronized boolean userLocationMatches(String name, String regexp) {
+        String key = "users." + name + ".location";
+        String location = attributes.get(key);
+        if (location == null)
+            return false;
+        else
+            return Pattern.matches(regexp, location);
+    }
+	//缩小锁住的同步块范围
+    public boolean userLocationMatches(String name, String regexp) {
+        String key = "users." + name + ".location";
+        String location;
+        synchronized (this) {
+            location = attributes.get(key);
+        }
+        if (location == null)
+            return false;
+        else
+            return Pattern.matches(regexp, location);
+    }
+}
+~~~
+
+#### 8.3.2 减小锁的粒度
+
+> 通过锁分段和锁分解，将采用多个相互独立的锁来保护独立的状态变量，从而改变这些变量之前由单个锁来保护的情况
+
+`这种方式可以降低线程请求锁的频率`
+
+锁分解：将一个竞争激烈的锁分解成两个相互独立的锁
+
+锁分段：将锁分解技术进一步扩展为对一组独立对象上的锁进行分解
+
+~~~java
+@ThreadSafe
+public class ServerStatusBeforeSplit {
+    @GuardedBy("this") 
+    public final Set<String> users;
+    @GuardedBy("this") 
+    public final Set<String> queries;
+
+    public ServerStatusBeforeSplit() {
+        users = new HashSet<String>();
+        queries = new HashSet<String>();
+    }
+	//使用类的内置锁完成同步
+    public synchronized void addUser(String u) {
+        users.add(u);
+    }
+
+    public synchronized void addQuery(String q) {
+        queries.add(q);
+    }
+
+    public synchronized void removeUser(String u) {
+        users.remove(u);
+    }
+
+    public synchronized void removeQuery(String q) {
+        queries.remove(q);
+    }
+}
+~~~
+
+使用锁分解技术后：
+
+~~~java
+@ThreadSafe
+public class ServerStatusAfterSplit {
+    @GuardedBy("users") 
+    public final Set<String> users;
+    @GuardedBy("users") 
+    public final Set<String> queries;
+
+    public ServerStatusAfterSplit() {
+        users = new HashSet<String>();
+        queries = new HashSet<String>();
+    }
+
+    public void addUser(String u) {
+        synchronized (users) {
+            users.add(u);
+        }
+    }
+
+    public void addQuery(String q) {
+        synchronized (queries) {
+            queries.add(q);
+        }
+    }
+
+    public void removeUser(String u) {
+        synchronized (users) {
+            users.remove(u);
+        }
+    }
+
+    public void removeQuery(String q) {
+        synchronized (users) {
+            queries.remove(q);
+        }
+    }
+}
+~~~
+
+`ConcurrHashMap`使用了锁分段技术
+
+下面是基于散列的HashMap实现
+
+<img src="https://raw.githubusercontent.com/loubei1210-leib/Pic/main/img/202201021951510.png" alt="image-20220102195116381" style="float:left" />
+
+~~~java
+@ThreadSafe
+public class StripedMap {
+    private static final int N_LOCKS = 16;
+    private final Node[] buckets;
+    private final Object[] locks;
+
+    private static class Node {
+        Node next;
+        Object key;
+        Object value;
+    }
+
+    public StripedMap(int numBuckets) {
+        buckets = new Node[numBuckets];
+        locks = new Object[N_LOCKS];
+        for (int i = 0; i < N_LOCKS; i++)
+            locks[i] = new Object();
+    }
+	//计算哈希值
+    private final int hash(Object key) {
+        return Math.abs(key.hashCode() % buckets.length);
+    }
+
+    public Object get(Object key) {
+        int hash = hash(key);
+        //使用locks[hash % N_LOCKS]作为锁
+        synchronized (locks[hash % N_LOCKS]) {
+            for (Node m = buckets[hash]; m != null; m = m.next)
+                if (m.key.equals(key))
+                    return m.value;
+        }
+        return null;
+    }
+	//clear方法要求获得所有的锁
+    public void clear() {
+        for (int i = 0; i < buckets.length; i++) {
+            synchronized (locks[i % N_LOCKS]) {
+                buckets[i] = null;
+            }
+        }
+    }
+}
+~~~
+
+#### 8.3.3 热点域
+
+> 热点域：将一些反复计算的结果缓存起来
+
+在实现HashMap时，需要考虑在size()方法中计算Map中的元素个数。除了每次都遍历外，一种常见的优化方法是，在插入和移除元素时，更新一个计数器。
+
+但是每次修改这个map时，都需要独占锁来更新这个共享的计数器。这会重新导致使用独占锁时存在的可伸缩性问题。
+
+<font color=pink>解决方法是对每个bucket都设置一个计数器，先计算每个bucket的大小，最后累加得到总的size。</font>
+
+在性能方面，通过每个分段的锁来维护这个值。
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201032222501.png" alt="image-20220103222212419" style="zoom:80%;float:left" />
+
+#### 8.3.4 替代独占锁的方法
+
+放弃使用独占锁的方式来降低竞争锁的影响
+
+1. 使用并发容器
+2. 读-写锁 （第13章）
+3. 不可变对象
+4. 原子变量（第15章）
+
+## 第九章 显式锁
+
+> Lock接口提供了一种更灵活的锁机制，用于补充内置锁某些功能的缺陷，例如打断等待锁的线程
+>
+> ReetrantLock是Lock接口的实现类，"重入锁"
+
+常见的代码结构
+
+~~~java
+// 重入锁	
+Lock lock = new ReetrantLock();
+// 获取锁
+lock.lock();
+try{
+// 更新对象状态    
+}
+// 释放锁
+finally{
+    lock.unlock();
+}
+~~~
+
+### 9.1 Lock接口
+
+#### 9.1.1 lock()
+
+获取锁，如果锁不是有效的，则线程进入阻塞状态直到获取锁
+
+~~~java
+void lock();
+~~~
+
+#### 9.1.2 unlock()
+
+~~~java
+void unlock(); // 释放锁
+~~~
+
+#### 9.1.2 tryLock()
+
+> 使用可定时的或可轮询的锁获取方式，可以有效避免死锁的发生
+
+~~~java
+Lock lock1 = new ReetrantLock();
+Lock lock2 = new ReetrantLock();
+// 如果在获得lock1的情况下，lock2被其他线程持有，那么持有lock1的线程会释放lock1，然后重新尝试获取所有锁
+while(true){
+    if(lock1.tryLock()){
+        try{
+            if(lock2.tryLock()){
+                try{
+                    ...
+                }finally{
+                    lock2.unlock();
+                }
+            }
+        }
+        finally{
+            lock1.unlock();
+        }
+	}
+}
+~~~
+
+<font color=orange>可轮询的锁获取模式</font>
+
+~~~java
+boolean tryLock(); // 如果锁是有效的，tryLock()会立即返回true，否则返回false
+~~~
+
+<font color=orange>可定时的锁获取方式</font>
+
+~~~java
+boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+~~~
+
+如果锁是有效的，则立即返回true，
+
+如果锁不是有效的，那么线程陷入阻塞状态，直到发生以下三种情况：
+
+- 在指定时间内获得了锁，返回true
+- 其他线程打断了当前线程，抛出`InterruptedException`
+- 在指定时间内没有获取锁，返回false
+
+#### 9.1.3 lockInterruptibly()
+
+~~~java
+void lockInterruptibly() throws InterruptedException;
+~~~
+
+如果锁是有效的，则立即返回
+
+如果锁不是有效的，那么线程会陷入阻塞状态，直到发生以下两种情况：
+
+- 当前线程获得了锁，返回
+- 其他线程打断了当前线程，抛出`InterruptedException`
+
+~~~java
+Lock lock = new ReetrantLock();
+lock.lockInterruptibly();
+try{
+    ...
+}
+finally{
+    lock.unlock();
+}
+~~~
+
+### 9.2 公平性与非公平性
+
+> 在ReetrantLock的构造函数中，可以选择锁的公平性与非公平性
+
+- 公平性：有其余线程在等待锁时，当前线程放入锁的等待队列中
+- 非公平性：如果请求锁的同时，锁的状态变为可用，则当前线程跳过队列中其他等待的线程获得这个锁。如果其他线程持有锁，则放入等待队列
+
+~~~java
+// 默认的构造方法为非公平锁
+public ReentrantLock() {
+     sync = new NonfairSync();
+}
+// 带参的构造方法，自己选择锁的公平性
+public ReentrantLock(boolean fair) {
+     sync = fair ? new FairSync() : new NonfairSync();
+}
+~~~
+
+在锁竞争激烈的情况下，非公平锁的性能高于公平锁：<font color=orange>恢复被挂起的线程与该线程开始真正运行之间存在着严重的时间延迟(上下文切换),但锁的非公平能让一个线程在"某个时机"直接插队获得该锁,提高了吞吐量。</font>
+
+### 9.3 读写锁
+
+> ReetrantLock实现了标准的互斥锁，每次最多只有一个线程能持有ReetrantLock，这是一种保守的策略。
+>
+> 虽然避免了读/写冲突，写/写冲突，但也避免了读/读冲突
+
+在许多情况下，大多数访问操作都是读操作，此时如果能放宽加锁需求，允许多个执行读操作的线程同时访问数据结构，那么将提升程序的性能。
+
+读写锁：一个资源可以被多个读操作访问，或者被一个写操作访问，但两者不能同时进行。
+
+~~~java
+public interface ReadWriteLock {
+    // 返回读锁
+    Lock readLock();
+	// 返回写锁
+    Lock writeLock();
+}
+~~~
+
+~~~java
+private final ReadWriteLock lock = new ReetrantReadWriteLock();
+private final Map<K, V> map;
+private final Lock readLock = lock.readLock();
+private final lock writeLock = lock.writeLock();
+// 写操作
+public V put(K key, V value){
+    // 写锁
+    writeLock.lock()；
+    try{
+        return map.put(key, value);
+    }
+    finally{
+        writeLock.unlock();
+    }
+}
+// 读操作
+public V get(K key){
+    // 读锁
+    readLock.lock();
+    try{
+        return map.get(key);
+    }
+    finally{
+        readLock.unlock();
+    }
+}
+~~~
+
+### 9.4 注意
+
+在ReetrantLock与ReetrantReadWriteLock的具体实现中都用到了`AQS`的知识，这在后面会进行介绍。
+
+
+
+
+
+
+
+
+
+
+
+## 第十章 AQS
+
+### 10.1 属性
+
+AQS的属性
+
+~~~java
+	// 头结点：代表当前持有锁的线程
+	private transient volatile Node head;
+	// 阻塞的尾节点
+    private transient volatile Node tail;
+    // 当前锁的状态，0代表没有被占用，大于1代表可重入
+	private volatile int state;
+	// 独占模式下拥有锁的线程
+    private transient Thread exclusiveOwnerThread;
+~~~
+
+静态内部类Node
+
+~~~java
+static final class Node {
+    	// 表示当前节点处于共享模式
+        static final Node SHARED = new Node();
+    	// 标识当前节点在独占模式
+        static final Node EXCLUSIVE = null;
+		//下面几个是waitstatus的状态
+        // 表示线程取消了争锁
+        static final int CANCELLED =  1;
+		// 表示node的后继节点需要被唤醒
+        static final int SIGNAL    = -1;
+		// 条件队列模式
+        static final int CONDITION = -2;
+        // ...
+        static final int PROPAGATE = -3;
+    ===================================================
+		// 当前节点的等待状态
+        volatile int waitStatus;
+		// 前驱节点
+        volatile Node prev;
+		// 后驱节点
+        volatile Node next;
+       	// 当前线程
+        volatile Thread thread;
+		// 在条件队列上等待的下一个节点
+    ===================================================
+        // 条件队列
+        Node nextWaiter; 
+}
+~~~
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201070939350.png" alt="image-20220107093859221" style="float:left" />
+
+<font color=orange>阻塞队列不包含head节点</font>
+
+### 10.2 ReentranLock
+
+~~~java
+// 我用个web开发中的service概念吧
+public class OrderService {
+    // 使用static，这样每个线程拿到的是同一把锁，当然，spring mvc中service默认就是单例，别纠结这个
+    // 获得的是一个公平锁
+    private static ReentrantLock reentrantLock = new ReentrantLock(true);
+
+    public void createOrder() {
+        // 比如我们同一时间，只允许一个线程创建订单
+        reentrantLock.lock();
+        // 通常，lock 之后紧跟着 try 语句
+        try {
+            // 这块代码同一时间只能有一个线程进来(获取到锁的线程)，
+            // 其他的线程在lock()方法上阻塞，等待获取到锁，再进来
+            // 执行代码...
+            // 执行代码...
+            // 执行代码...
+        } finally {
+            // 释放锁
+            reentrantLock.unlock();
+        }
+    }
+}
+~~~
+
+#### 10.2.1 争锁
+
+~~~java
+    // 争锁
+	final void lock() {
+        acquire(1);
+    }
+	    
+	// 获取锁
+	public final void acquire(int arg) {
+        //1. 看看能否尝试获取锁成功
+        //2. 获取失败将当前线程转为节点进入阻塞队列
+        if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            // 因为线程被中断过，但中断状态为已经被清除了，调用下面这个方法重新设置中断状态
+            selfInterrupt();
+    }
+
+
+	// 尝试获取锁
+	protected final boolean tryAcquire(int acquires) {
+        final Thread current = Thread.currentThread();
+        int c = getState();
+        // state=0代表锁没有被占用
+        if (c == 0) {
+            // 1.查看是否也有其他线程在阻塞队列等待获取锁
+            // 2.原子方式设置状态位
+            // 如果有一个返回false，说明有其他线程在阻塞或者抢先cas了
+            if (!hasQueuedPredecessors() && compareAndSetState(0, acquires)) {
+                setExclusiveOwnerThread(current);
+                return true;
+            }
+        }
+        // state > 0，则代表可能是线程重入锁了，只要更新state就可以了
+        else if (current == getExclusiveOwnerThread()) {
+            int nextc = c + acquires;
+            if (nextc < 0)
+                throw new Error("Maximum lock count exceeded");
+            setState(nextc);
+            return true;
+        }
+        // 获取锁失败，则返回到上一级函数调用 if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        return false;
+    }
+
+	// 把当前线程转换为指定模式的节点并且入队
+	private Node addWaiter(Node mode) {
+        Node node = new Node(Thread.currentThread(), mode);
+        // 将节点接到阻塞队列中
+        Node pred = tail;
+        // 队列不为空 (当tail==null时说明没有阻塞队列,head=tail==null时则说明刚初始化)
+        if (pred != null) {
+            node.prev = pred;
+            if (compareAndSetTail(pred, node)) {
+                pred.next = node;
+                return node;
+            }
+        }
+        // 队列为空或者CAS失败，其他线程抢先设置了尾节点入队
+        enq(node);
+        return node;
+    }
+
+	// 在队列为空或者CAS失败的情况下，以自旋的方式将线程节点接入到队列中
+	private Node enq(final Node node) {
+        // 自旋循环
+        for (;;) {
+            Node t = tail;
+            // 队列为空
+            if (t == null) { 
+                // 设置头结点newNode() waitStatus = 0，后边可以设置
+                if (compareAndSetHead(new Node()))
+                    // 将tail指向head
+                    // 注意，这里没有返回t,而是继续for循环,继续for循环,继续for循环,将node入队
+                    tail = head;
+            }
+            // 和上一个方法一样，再次尝试接入到链表尾节点
+            else {
+                node.prev = t;
+                if (compareAndSetTail(t, node)) {
+                    t.next = node;
+                    return t;
+                }
+            }
+        }
+    }
+
+	// 上面这个方法返回之后，又回到了if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+	// acquireQueued将会使线程阻塞和获取锁
+	// 返回true：说明线程结束阻塞的方式是其他线程中断的
+	// 返回false:说明线程结束阻塞的方式是LocksSupport.unpark()
+	final boolean acquireQueued(final Node node, int arg) {
+        boolean failed = true;
+        try {
+            boolean interrupted = false;
+            // 不断的for循环，直到node获取了锁。(线程重新不阻塞后再次尝试获取锁)
+            for (;;) {
+                final Node p = node.predecessor();
+                // node的前继节点为head，说明node是阻塞队列的第一个节点
+                // 因此node节点可以去尝试获取锁，因为new Node()时没有设置任何线程,state为0
+                if (p == head && tryAcquire(arg)) {
+                    // 将node设置为头结点，node.thread=null, node.prev=null
+                    setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return interrupted;
+                }
+                // 走到这里则说明节点不再是阻塞队列的第一个节点了(本来就不是或者竞争锁失败)
+                if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())
+                    interrupted = true;
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
+    }
+	
+	// 在争锁失败后挂起线程
+	private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+        int ws = pred.waitStatus;
+        // 之前设置了前一个节点的状态=-1，是正常的状态,当前线程可以安全挂起，等待以后前驱结点释放锁时被唤醒（前面的for循环中可能会不断调用这个方法）
+        if (ws == Node.SIGNAL)
+            return true;
+        // waitstatus=1，则说明前继节点放弃了争锁(reentrantlock可以定时争锁)
+        if (ws > 0) {
+            // 寻找前继节点
+            do {
+                node.prev = pred = pred.prev;
+            } while (pred.waitStatus > 0);
+            pred.next = node;
+        }
+        // waitStatus = 0（node初始化时），将它设置为-1
+        else {
+            compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+        }
+        return false;
+    }
+	// 如果上一个方法返回true 则说明线程可以安全挂起，而这个方法就是用来挂起线程的
+	private final boolean parkAndCheckInterrupt() {
+        LockSupport.park(this);  // 线程被阻塞在此
+        // 线程结束阻塞时，会检查自己结束阻塞的原因是否因为中断
+        // 如果是因为中断，返回true，之后清除中断的状态
+        return Thread.interrupted();
+    }
+~~~
+
+![image-20220107203022006](https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201072030106.png)
+
+#### 10.2.2 释放锁
+
+~~~java
+	public void unlock() {
+        sync.release(1);
+    }
+	// 释放锁
+	public final boolean release(int arg) {
+        // 释放锁成功
+        if (tryRelease(arg)) {
+            Node h = head;
+            if (h != null && h.waitStatus != 0)
+                unparkSuccessor(h);
+            return true;
+        }
+        return false;
+    }
+	// 尝试释放锁
+	protected final boolean tryRelease(int releases) {
+        int c = getState() - releases;
+        if (Thread.currentThread() != getExclusiveOwnerThread())
+            throw new IllegalMonitorStateException();
+        boolean free = false;
+        // 锁没有被占用
+        if (c == 0) {
+            free = true;
+            setExclusiveOwnerThread(null);
+        }
+        setState(c);
+        return free;
+    }
+	// 唤醒被挂起的线程
+	private void unparkSuccessor(Node node) {
+        // 清理node的状态
+        int ws = node.waitStatus;
+        if (ws < 0)
+            compareAndSetWaitStatus(node, ws, 0);
+		
+        Node s = node.next;
+        // 有可能后继节点取消了等待
+        if (s == null || s.waitStatus > 0) {
+            s = null;
+            // 从队尾往前找，找到waitStatus<=0的所有节点中排在最前面的
+            for (Node t = tail; t != null && t != node; t = t.prev)
+                if (t.waitStatus <= 0)
+                    s = t;
+        }
+        // 唤醒线程
+        if (s != null)
+            LockSupport.unpark(s.thread);
+    }
+	// 唤醒之后的线程会回到这个方法中，然后继续循环
+	private final boolean parkAndCheckInterrupt() {
+        LockSupport.park(this);  // 线程被阻塞在此
+        return Thread.interrupted();
+    }
+~~~
+
+#### 10.2.3 总结
+
+- AQS采用Locks.park(thread)和Locks.unpark(thread)来阻塞和解除阻塞
+- 采用链表作为阻塞队列
+- 通过state状态来查看锁是否被线程持有
+
+#### 10.2.4 公平与非公平
+
+公平锁与非公平锁在源码里只有两点区别:
+
+- 非公平锁会直接先进行一次CAS(0,1),如果成功了就直接返回。
+- 如果锁没有被占用(state=0)，非公平锁不会查看队列中是否还有其他线程，直接CAS尝试抢占
+
+~~~java
+static final class NonfairSync extends Sync {
+        final void lock() {
+            // 区别1：会尝试先进行一次CAS抢占锁
+            if (compareAndSetState(0, 1))
+                setExclusiveOwnerThread(Thread.currentThread());
+            else
+                acquire(1);
+        }
+    
+    	final boolean nonfairTryAcquire(int acquires) {
+            final Thread current = Thread.currentThread();
+            int c = getState();
+            if (c == 0) {
+                // 区别2：如果锁没被占用，直接CAS抢占锁，不会查看队列是否有其他线程
+                if (compareAndSetState(0, acquires)) {
+                    setExclusiveOwnerThread(current);
+                    return true;
+                }
+            }
+            else if (current == getExclusiveOwnerThread()) {
+                int nextc = c + acquires;
+                if (nextc < 0) // overflow
+                    throw new Error("Maximum lock count exceeded");
+                setState(nextc);
+                return true;
+            }
+            return false;
+        }
+    }
+~~~
+
+### 10.3 条件队列
+
+> 条件队列：使得一组线程能够通过某种方式来等待特定的条件变成真，常用于生产者消费者模式
+
+#### 10.3.1 内置的条件队列
+
+Java对象的内置锁和内置条件队列是相关联的，要想使用条件队列的API，就必须持有锁。换句话说,内置锁对象必须也是条件队列对象。
+
+~~~java
+// this对象既是锁对象又是条件队列对象
+public synchronized put(V v){
+    while(isFull()){
+        this.wait();
+    }
+    doPut(v);
+    this.notifyAll();
+}
+public synchronized take(){
+    while(isEmpty()){
+        this.wait();
+    }
+    doTake();
+    this.notifyAll();
+}
+~~~
+
+<font color=orange>多个线程基于不同的条件在同一个条件队列上等待。因此如果使用notify()而不是notifyAll()将是一个危险操作。</font>
+
+- notifyAll():所有线程被唤醒后，会争抢锁。争到锁的线程会因为while循环再次判断条件是否满足，不满足则再次进入条件队列同时放弃锁，其他被唤醒的线程可以再次争抢锁。
+- notify():选择一个线程被唤醒，但这个线程可能是由于不同的条件而等待，因此即便抢到锁也会因条件不满足再次进入条件队列。因此notify()信号丢失了。
+
+可以发现，内置锁的缺陷是<font color=pink>只能拥有一个相关联的条件队列。</font>在notifyAll()会造成大量的上下文切换。
+
+**ReentrantLock和Condition的结合解决了这个问题。**
+
+#### 10.3.2 显示的条件队列
+
+Lock与Condition一起使用，就如同内置锁和内置条件队列一样。但Lock可以拥有任意数量Condition（条件队列）
+
+```java
+class BoundedBuffer {
+    final Lock lock = new ReentrantLock();
+    // condition 依赖于 lock 来产生
+    final Condition notFull = lock.newCondition();
+    final Condition notEmpty = lock.newCondition();
+
+    final Object[] items = new Object[100];
+    int putptr, takeptr, count;
+
+    // 生产
+    public void put(Object x) throws InterruptedException {
+        lock.lock();
+        try {
+            while (count == items.length)
+                notFull.await();  // 队列已满，等待，直到 not full 才能继续生产
+            items[putptr] = x;
+            if (++putptr == items.length) putptr = 0;
+            ++count;
+            notEmpty.signal(); // 生产成功，队列已经 not empty 了，发个通知出去
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // 消费
+    public Object take() throws InterruptedException {
+        lock.lock();
+        try {
+            while (count == 0)
+                notEmpty.await(); // 队列为空，等待，直到队列 not empty，才能继续消费
+            Object x = items[takeptr];
+            if (++takeptr == items.length) takeptr = 0;
+            --count;
+            notFull.signal(); // 被我消费掉一个，队列 not full 了，发个通知出去
+            return x;
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
+<font color=pink>Condition对象使用await()和signal()</font>
+
+#### 10.3.3 Condition对象
+
+```java
+public class ConditionObject implements Condition, java.io.Serializable {
+    /** 条件队列的头结点 */
+    private transient Node firstWaiter;
+    /** 条件队列的尾节点 */
+    private transient Node lastWaiter;
+    ...
+}
+```
+
+两个不同的概念：
+
+- 条件队列：因为条件不满足而阻塞的线程，使用 nextWaiter 指针构成的单向链表
+- 阻塞队列：因为争抢锁而阻塞的线程，使用 next、prev 指针构成的双向链表
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201081358869.png" alt="image-20220108135845703" style="zoom:80%;float:left" />
+
+1. 线程1调用 `condition1.await()` 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后**阻塞**在这里。
+2. 线程2调用 `condition1.signal()` 方法，会将对应的**条件队列**的 firstWaiter（队头）移到**阻塞队列的队尾**，等待获取锁，获取锁后 await 方法才能返回，继续往下执行。
+
+```java
+## 调用await()方法，等待唤醒
+public final void await() throws InterruptedException {
+    // 查看线程是否被中断
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    // 1.将线程添加到条件队列中
+    Node node = addConditionWaiter();
+    // 2.释放锁，因为是可重入锁，返回重入的次数
+    int savedState = fullyRelease(node);
+    int interruptMode = 0;
+    ==============================================================
+        如果另一个线程执行condition.signal()，则节点将位于阻塞队列中
+    ==============================================================
+    // 3.节点是否已经从条件队列中移动到阻塞队列了呢？
+    // 没有则阻塞当前线程
+    while (!isOnSyncQueue(node)) {
+        LockSupport.park(this); // 线程在此阻塞
+        if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
+            break;
+    }
+    // 4.在阻塞队列中尝试获取锁
+    if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
+        interruptMode = REINTERRUPT;
+    if (node.nextWaiter != null) // clean up if cancelled
+        unlinkCancelledWaiters();
+    if (interruptMode != 0)
+        reportInterruptAfterWait(interruptMode);
+}
+```
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201091216975.png" alt="image-20220109121608890" style="float:left" />
+
+**1. 将节点加入条件队列**
+
+```java
+## 将当前线程添加进条件队列中
+private Node addConditionWaiter() {
+    Node t = lastWaiter;
+    // 队列的最后一个节点已经取消等待某个条件，则会将它清除出去
+    if (t != null && t.waitStatus != Node.CONDITION) {
+        // 清楚所有取消等待的线程
+        unlinkCancelledWaiters();
+        t = lastWaiter;
+    }
+    // 将线程转换成节点添加进条件队列中
+    Node node = new Node(Thread.currentThread(), Node.CONDITION);
+    if (t == null)
+        firstWaiter = node;
+    else
+        t.nextWaiter = node;
+    lastWaiter = node;
+    return node;
+}
+// 移除取消条件等待的节点
+private void unlinkCancelledWaiters() {
+    Node t = firstWaiter;
+    Node trail = null; // 跟踪指针
+    /****
+    tail -> t -> next
+    *****/
+    while (t != null) {
+        Node next = t.nextWaiter;
+        // t已经取消条件队列上的等待, 移除t
+        if (t.waitStatus != Node.CONDITION) {
+            t.nextWaiter = null;
+            if (trail == null)
+                firstWaiter = next;
+            else
+                trail.nextWaiter = next;
+            if (next == null)
+                lastWaiter = trail;
+        }
+        // t仍然是条件队列的状态，更新tail
+        else
+            trail = t;
+        t = next;
+    }
+}
+```
+
+**2. 执行`fullyRealse()`，当前线程释放锁**
+
+~~~java
+final int fullyRelease(Node node) {
+    boolean failed = true;
+    try {
+        // 获取线程重入锁的次数
+        int savedState = getState();
+        // 完全释放锁
+        // 成功就返回
+        // 失败就抛出异常，同时
+        if (release(savedState)) {
+            failed = false;
+            return savedState;
+        } else {
+            throw new IllegalMonitorStateException();
+        }
+    } finally {
+        // 将线程状态设为Cancelled，这个节点会被清除(在之前的代码解析中说过‘shouldParkAfterFailure’)
+        if (failed)
+            node.waitStatus = Node.CANCELLED;
+    }
+}
+
+public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        // 唤醒下一个节点线程
+        Node h = head;
+        if (h != null && h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}
+// 返回true则说明释放完毕，线程不再占有锁
+// 返回false则说明异常
+protected final boolean tryRelease(int releases) {
+    int c = getState() - releases;
+    if (Thread.currentThread() != getExclusiveOwnerThread())
+        throw new IllegalMonitorStateException();
+    boolean free = false;
+    // c == 0,说明全部释放完毕，返回true,同时更新没有线程持有锁
+    if (c == 0) {
+        free = true;
+        setExclusiveOwnerThread(null);
+    }
+    // c != 0 返回false，这是错误的
+    setState(c);
+    return free;
+}
+~~~
+
+**3. 等待进入阻塞队列**
+
+~~~java
+// 返回true则说明节点已经位于阻塞队列中
+// 返回false则说明还在条件队列
+final boolean isOnSyncQueue(Node node) {
+    // 移动过去的时候，node 的 waitStatus 会置为 0，这个在说 signal 方法的时候会说到
+    // 如果 waitStatus 还是 Node.CONDITION，也就是 -2，那肯定就是还在条件队列中
+    // 如果 node 的前驱 prev 指向还是 null，说明肯定没有在 阻塞队列(prev是阻塞队列链表中使用的)
+    if (node.waitStatus == Node.CONDITION || node.prev == null)
+        return false;
+    // 如果next指针不为空，说明已经在阻塞队列
+    if (node.next != null) 
+        return true;
+    // 可以通过判断 node.prev() != null 来推断出 node 在阻塞队列吗？答案是：不能。
+    // 这个可以看 AQS 的入队方法，首先设置的是 node.prev 指向 tail，
+    // 然后是 CAS 操作将自己设置为新的 tail，可是这次的 CAS 是可能失败的。
+    return findNodeFromTail(node);
+}
+// 从后往前查找是否有node在阻塞队列中
+private boolean findNodeFromTail(Node node) {
+    Node t = tail;
+    for (;;) {
+        if (t == node)
+            return true;
+        if (t == null)
+            return false;
+        t = t.prev;
+    }
+}
+~~~
+
+**4. signal()将线程移动到阻塞队列**
+
+```java
+// 1. 让阻塞的线程节点移动到阻塞队列中
+// 2. 让阻塞的线程继续执行 
+public final void signal() {
+    // 检查调用这个方法的线程是否是独占了锁
+    if (!isHeldExclusively())
+        throw new IllegalMonitorStateException();
+    // 将条件队列中等待最久的线程移入阻塞队列
+    Node first = firstWaiter;
+    if (first != null)
+        doSignal(first);
+}
+private void doSignal(Node first) {
+    do {
+        // firstWaiter更新为条件队列中的下一个节点
+        if ( (firstWaiter = first.nextWaiter) == null)
+            lastWaiter = null;
+        //因为节点即将移入到阻塞队列，因此切断节点和条件队列的关系
+        first.nextWaiter = null;
+    } while (!transferForSignal(first) &&
+             (first = firstWaiter) != null);
+}
+// 移动节点到阻塞队列
+final boolean transferForSignal(Node node) {
+    // 如果无法设置waitStatus，说明节点已经设置为cancelled状态（在fullyRealse方法中）,则不用进入阻塞队列了
+    if (!compareAndSetWaitStatus(node, Node.CONDITION, 0))
+        return false;
+    // 执行enq方法将节点接入，返回前一个节点
+    Node p = enq(node);
+    int ws = p.waitStatus;
+    // 设置前一个节点的状态为-1(前面讲过，前一个节点的状态由后一个节点更新)
+    // 如果状态本来就是已关闭，或者CAS设置失败，重新同步
+    if (ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))
+        LockSupport.unpark(node.thread);
+    return true;
+}
+```
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201091219799.png" alt="image-20220109121934719" style="float:left" />
+
+**5. 唤醒后检查中断的状态**
+
+线程能够结束LockSupport.park()阻塞的的原因:
+
+- 进入阻塞队列后成功被唤醒
+- signal()方法中因为CAS失败或者前一个节点线程已经取消
+- 线程中断
+  - 在signal()方法调用前,说明节点还在条件队列时被中断（需要将节点转移到阻塞队列，然后抛出异常）
+  - 在signal()方法调用后,说明节点已经在阻塞队列或者即将进入阻塞队列（所以会有Thread.yeild()让其完成转移) 
+
+interruptMode:
+
+- REINTERRUPT： 代表 await 返回的时候，需要重新设置中断状态,在signal()方法调用之后中断
+- THROW_IE： 代表 await 返回的时候，需要抛出 InterruptedException 异常,signal()方法调用前中断
+- 0 ：说明在 await 期间，没有发生中断
+
+~~~java
+// 退出循环的条件时：1.成功入队 2.中断
+while (!isOnSyncQueue(node)) {
+        LockSupport.park(this); // 后面的signal()方法会唤醒
+    	===============
+            结束阻塞
+        ===============
+    	//线程继续执行后首先判断自己是否是因为中断才唤醒的
+        //如果是因为中断，则判断是signal()前还是signal()后
+        if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
+            break;
+}
+// 检查是否是阻塞期间发生了中断?
+private int checkInterruptWhileWaiting(Node node) {
+    return Thread.interrupted() ?
+        (transferAfterCancelledWait(node) ? THROW_IE : REINTERRUPT) : 0;
+}
+// 判断中断是什么时候发生的
+final boolean transferAfterCancelledWait(Node node) {
+    // 如果waitStatus为condition，则说明是在signal()方法前发生的中断
+    if (compareAndSetWaitStatus(node, Node.CONDITION, 0)) {
+        // 即便是在条件队列中被中断，也移入阻塞队列，但因此会抛出异常
+        enq(node);
+        return true;
+    }
+    // 到这里肯定是因为signal()方法已经开始执行,因为signal会将节点状态设为0，转移到阻塞队列
+    // while循环的作用是确保节点成功入阻塞队列
+    // 当然，这种事情还是比较少的吧：signal 调用之后，没完成转移之前，发生了中断
+    while (!isOnSyncQueue(node))
+        Thread.yield();
+    return false;
+}
+~~~
+
+**6. 获取独占锁**
+
+线程进入阻塞队列之后又可以重新尝试获取锁了
+
+~~~java
+//acquireQueued(node, savedState) 的返回值就是代表线程是否被中断
+//如果返回 true，说明被中断了，而且 interruptMode != THROW_IE，说明在 signal 之后发生中断了
+//这里将 interruptMode 设置为 REINTERRUPT，用于待会重新中断。
+if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
+        interruptMode = REINTERRUPT;
+// 如果在signal()前发生中断，那么即便中断也会入队(transferAfterCancelledWait)
+// 没有设置node.nextWaiter==null
+// 下述的代码就是将因为中断而进入阻塞队列的节点清除其在条件队列上的位置
+if (node.nextWaiter != null) 
+        unlinkCancelledWaiters();
+
+if (interruptMode != 0)
+        reportInterruptAfterWait(interruptMode);
+~~~
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201091217781.png" alt="image-20220109121724682" style="zoom:80%;float:left" />
+
+**7. 处理中断状态**
+
+到这里，我们终于可以好好说下这个 interruptMode 干嘛用了。
+
+- 0：什么都不做，没有被中断过；
+- THROW_IE：让await方法抛出 InterruptedException 异常，因为它代表在 await() 期间发生了中断；
+- REINTERRUPT：重新中断当前线程，因为它代表 await() 期间没有被中断，而是 signal() 以后发生的中断
+
+```java
+private void reportInterruptAfterWait(int interruptMode)
+    throws InterruptedException {
+    if (interruptMode == THROW_IE)
+        throw new InterruptedException();
+    else if (interruptMode == REINTERRUPT)
+        // 重新记录中断的状态
+        selfInterrupt();
+}
+```
+
+## 第十一章 中断
+
+### 10.1 API的说明
+
+> 在Java中，中断其实就是设置一个boolean类型的中断状态
+>
+> 中断一个线程，目标线程的中断状态将被设置为true
+
+~~~JAVA
+// 中断目标线程，目标线程的中断状态将被设置为true
+void interrupt() {
+    if (this != Thread.currentThread())
+            checkAccess();
+
+    synchronized (blockerLock) {
+        Interruptible b = blocker;
+        if (b != null) {
+            // 设置中断状态位
+            interrupt0();         
+            b.interrupt(this);
+            return;
+        }
+    }
+    interrupt0();
+}
+~~~
+
+1. 如果线程A阻塞于`obj.wait()`...或者`Thread.sleep()`、`Thread.join()`...当线程B调用`A.interrupt()`会**先设置A的中断状态为true。**
+
+​    **wait()等阻塞库方法会检查A的中断状态，一旦发现中断会提前返回，然后自动清除A的中断状态**、抛出InterruptedException。
+
+2. 如果线程A阻塞于`InterruptibleChannel`，但是中断状态会保持，目标线程会抛出ClosedByInterruptException。
+3. 如果线程A阻塞于`Selector`，那么中断状态也不会被清除，同时会立即从select操作中立即返回。
+4. 如果线程A阻塞于`LockSupport.park`,那么中断状态不会被清除，但方法检测到中断会唤醒线程
+5. 上述3中情况都不是，那么仅仅改变目标线程的中断状态
+
+~~~java
+public boolean isInterrupted() {
+    return isInterrupted(false);
+}
+~~~
+
+查看目标线程是否被中断了。调用这个方法不会改变中断状态。
+
+- true:目标线程被中断了
+- false:其他情况
+
+```java
+// 静态方法
+public static boolean interrupted() {
+    return currentThread().isInterrupted(true);
+}
+```
+
+查看当前线程是否被中断了，<font color=orange>清除线程的中断状态。</font>
+
+换句话说，如果连续两次调用该方法，第二次调用会返回false。
+
+- true:当前线程被中断了
+- false:其他情况
+
+### 10.2 响应中断
+
+> 当看到方法上带有 `throws InterruptedException` 时，就要知道这个方法应该是阻塞方法，我们如果希望它能早点返回的话，我们往往可以通过中断来实现。 
+
+如果线程在阻塞期间被中断，那么他可以选择不处理也可以选择处理
+
+- 不处理，记录中断的状态位(LockSupport.park())或返回代表中断的boolean类型结果
+- 处理，结束阻塞抛出InterruptedException(Thread.sleep()、obj.wait())
+
+~~~java
+// 如果方法抛出InterruptedException，那么方法的开头会进行中断的判断
+public final void await() throws InterruptedException {
+    if (Thread.interrupted()) {
+        throw new InterruptedException();
+	}
+    ...
+}
+
+public final void acquireInterruptibly(int arg) throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    if (!tryAcquire(arg))
+        doAcquireInterruptibly(arg);
+}
+// 方法不抛出异常，但记录中断的状态位，selfInterrupt会重新中断
+public final void acquire(int arg) {
+    if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        selfInterrupt();
+}
+static void selfInterrupt() {
+    Thread.currentThread().interrupt();
+}
+// queue.take()方法在取得任务前即便中断也会继续循环进行，在取得任务后中断
+try{
+    while(true){
+        try{
+            queue.take();
+        }catch(InteruptedException e){
+            interrupted = true;
+            Thread.interrupted();
+        }
+    }
+}
+finally{
+    if(interrupted){
+        Thread.currentThread.interrupt();
+    }
+}
+
+~~~
+
+## 第十二章 Java内存模型
+
+> 为了提高程序的执行效率，编译器和处理器会对指令进行重排序，但在并发操作下会导致数据安全问题。如果操作能符合happens-before规则，则程序员不用担心重排序的问题。
+
+### 12.1 happens-before规则
+
+Java内存模型为所有的操作定义了一个偏序关系，称为<font color=orange>"happens-before"</font>，提供了可见性与顺序性保证。
+
+要想保证执行操作B的线程可以见到操作A的结果，那么操作A必须<font color=orange>happens-before</font>操作B.
+
+Java中符合happens-before规则的包括：
+
+- 在一个单独的线程中，按照程序代码的执行流顺序，（时间上）先执行的操作happen—before（时间上）后执行的操作
+- 对一个锁的解锁在这个锁的加锁前执行。
+- 对一个volatile域的写在任意后续对这个volatile域的读之前执行
+- 如果A happens-before B，且B happens-before C，那么A happens-before C。
+- 对线程thread.start的调用必须在该线程中执行任何操作之前执行
+
+**JMM会寻求一个happens-before的平衡点：既向程序员保证程序的顺序性，又要让底层的编译器能对指令重排序提高效率。**
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201141310955.webp" alt="img" style="zoom:80%;float:left" />
+
+**只要不改变程序的执行结果（单线程程序和正确同步了的多线程程序），编译器和处理器怎么优化都行。**
+
+在AQS同步类构造的Latch、Semaphore中，利用了`volatile`的可见性与happens-before规则的排序功能。
+
+### 12.2 volatile的原理
+
+对于volatile修饰的变量，编译器会在生成字节码序列时，在指令序列中添加<font color=orange>内存栅栏</font>
+
+- 对volatile变量的写操作之后加入写屏障
+- 对volatile变量的读操作之前加入写屏障
+
+写屏障保证在该屏障之前，对共享变量的改动都同步到主内存中（可见性），同时保证不进行重排序（有序性）。
+
+读屏障保证在该屏障之后，对共享变量的读取加载的是主内存中最新的值，同时保证不进行重排序。
+
+<img src="https://raw.githubusercontent.com/Leibgo/Pic/main/img/202201132158509.png" alt="image-20220113215830407" style="zoom:80%;float:left" />
+
+缺点：volatile无法保证原子性，所以在`checkAndSet`中还是存在线程安全问题。
+
+### 12.3 发布
+
+不正确发布的真正原因：是在"发布一个对象"与"另一个线程访问对象"之间缺乏一种happens-before排序
+
+换句话说，在对象还没发布完对象前，另一个线程已经开始访问对象了
+
+#### 12.3.1 不安全的发布
+
+发布一个对象的步骤：
+
+1. 初始化一个对象时写入多个变量的初始值(域)
+2. 将变量写入引用
+
+这两个步骤会发生重排序，如果无法确保发布一个对象的操作happens-before于另一个线程读取该对象的操作，那么无法保证发布对象的可见性。
+
+在这种情况下，另一个线程可能读取到被部分构造的对象。
+
+~~~java
+public class UnsafeLazyInitialization {
+    private static Resource resource;
+    public static Resource getInstatnce(){
+        // 不考虑竞态条件问题，这个类也是线程不安全的
+        // 另一个线程可能看到部分构造的实例引用
+        if(resource == null){
+            resource = new Resource();
+        }
+        return resource;
+    }
+}
+~~~
+
+#### 12.3.2 安全初始化方式
+
+> 可以使用下面几种方法来确保两个操作的happens-before(可见性) `与第三章的安全发布内容一致`
+
+1. 声明为synchronized方法
+
+~~~java
+public class SafeLazyInitialization{
+    private static Resource resource;
+    public synchronized static Resource getInstance(){
+        if(resource == null){
+			resource = new Resource();
+        }
+        return resource;
+    }
+}
+~~~
+
+2. 提前初始化
+
+~~~java
+public class EagerInitialization {
+    private static Resource resource = new Resource();
+    public static Resource getResource(){
+        return resource;
+    }
+}
+~~~
+
+3. 静态内部类
+
+~~~java
+public class ResourceFactory{
+    public static class ResourceHolder{
+        public static Resource resource = new Resource();
+    }
+    public static Resource getResource(){
+        return ResourceHolder.resource;
+    }
+}
+~~~
+
+4. 双重检查加锁
+
+~~~java
+public class DoubleCheckLocking{
+    private static volatile Resource resource;
+    public static Resource getInstance(){
+        if(resouce == null){
+            synchronized(DoubleCheckLocking.class){
+                if(resouce == null){
+                    resource = new Resource();
+                }
+            }
+        }
+        return resource;
+    }
+}
+~~~
+
+5. 不可变对象
+
+~~~java
+public class SafeLazyInitialization{
+    private static final Resource resource;
+    public synchronized static Resource getInstance(){
+        if(resource == null){
+			resource = new Resource();
+        }
+        return resource;
+    }
+}
+~~~
 
