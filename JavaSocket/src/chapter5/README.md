@@ -133,7 +133,7 @@ TCPEchoClientNonBlocking.java
 
 ~~~java
 //非阻塞操作
-//1.通过持续调用finisConnect()方法来"轮询"连接状态,该方法在连接成功建立前一直返回false
+//1.通过持续调用finishConnect()方法来"轮询"连接状态,该方法在连接成功建立前一直返回false
 //但这种处于忙等的状态
 if(!clntChan.connect(new InetSocketAddress(server, servPort))){
     while(!clntChan.finishConnect()) {
@@ -207,7 +207,7 @@ public final Buffer clear() {
 }
 ~~~
 
-`rewind() :` 将postion置为0
+`rewind() :` 将position置为0
 
 ~~~java
 public final Buffer rewind() {
@@ -226,7 +226,7 @@ public final Buffer mark() {
 }
 ~~~
 
-`reset():`将postion充置为上次mark处
+`reset():`将position充置为上次mark处
 
 ~~~java
 public final Buffer reset() {
@@ -238,7 +238,7 @@ public final Buffer reset() {
 }
 ~~~
 
-`compact()`：可以理解为"切换成写模式"，将当前postion和limit间的数据复制到缓冲区的开始位置，从而为<font color='orange'>缓存区的写模式腾出空间</font>。position设置为复制数据的长度，limit设置为capacity，这样写入的数据就不会覆盖之前未读的数据。
+`compact()`：可以理解为"切换成写模式"，将当前position和limit间的数据复制到缓冲区的开始位置，从而为<font color='orange'>缓存区的写模式腾出空间</font>。position设置为复制数据的长度，limit设置为capacity，这样写入的数据就不会覆盖之前未读的数据。
 
 ~~~java
 //compact()方法将所有未读的数据拷贝到Buffer起始处。然后将position设到最后一个未读元素正后面
@@ -257,7 +257,7 @@ Channel通道<font color=orange>只负责传输数据、不直接操作数据的
 - FileChannel：文件通道，用于文件的读和写
 - DatagramChannel：用于 UDP 连接的接收和发送
 - SocketChannel：把它理解为 TCP 连接通道，简单理解就是 TCP 客户端
-- ServerSocketChannel：TCP 对应的服务端，用于监听某个端口进来的请求
+- ServerSocketChannel：TCP对应的服务端，用于监听某个端口进来的请求
 
 ### 3.4 Selector
 
