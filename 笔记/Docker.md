@@ -1554,3 +1554,7 @@ docker-compose.yml  Dockerfile  renren-fast.jar
 
 10. 启动项目，并将数据库文件导入
 
+~~~sql
+docker-compose up
+~~~
+
