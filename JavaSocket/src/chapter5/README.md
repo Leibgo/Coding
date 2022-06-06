@@ -265,15 +265,15 @@ Selector 建立在非阻塞的基础之上，大家经常听到的 <font color=o
 
 多路复用的核心在于使用一个 Selector 来管理多个通道，可以是 SocketChannel，也可以是 ServerSocketChannel，将各个通道注册到 Selector 上，指定监听的事件；
 
-之后可以只用一个线程来轮询这个 Selector，看看上面是否有通道是准备好的，当通道准备好可读或可写，然后才去开始真正的读写，这样就避免了给每个通道都开启一个线程。
+<font color=orange>之后可以只用一个线程来轮询这个 Selector，看看上面是否有通道是准备好的，当通道准备好可读或可写，然后才去开始真正的读写，这样就避免了给每个通道都开启一个线程。</font>
 
 每一个Selector都有三个键集，<font color=pink>Set<SelectionKey> keys</font>，<font color=pink>Set<SelectionKey> selectedKeys</font>，<font color=pink>Set<SelectionKey> cancelKeys</font>
 
-<font color=drsfdred>TCP客户端只有一个Socket对应着只有一个SelectionKey</font>
+- <font color=drsfdred>TCP客户端只有一个Socket对应着只有一个SelectionKey</font>
 
-<font color=drsfdred>TCP服务器端有多个客户端连接，对应着多个Socket以及多个SelectionKey</font>
+- <font color=drsfdred>TCP服务器端有多个客户端连接，对应着多个Socket以及多个SelectionKey</font>
 
-<font color=drsfdred>服务器的Selector与客户端的Selector不是同一个</font>
+- <font color=drsfdred>服务器的Selector与客户端的Selector不是同一个</font>
 
 注册后事件存在于 keys 中,经过 select() 后，系统发现有事件准备好了，该事件的key就会被选择，加入selectedKeys中，select(）返回值为已准备好的key数量，该方法为阻塞方法，只有返回值为大于0才返回（经过很长一段时间后无果也会返回），可以被wakeUp()方法唤醒
 
